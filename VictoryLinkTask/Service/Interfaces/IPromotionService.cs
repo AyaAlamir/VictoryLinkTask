@@ -10,6 +10,6 @@ namespace VictoryLinkTask.Service.Interfaces
     public interface IPromotionService
     {
         Task<GeneralResponseDto> ReceiveRequest(ReceivePromotionInputDto InputDto);
-        Task<GeneralResponseDto> HandleRequest(HandlePromotionInputDto InputDto);
+        Task<GeneralResponseDto> HandleRequest(List<HandlePromotionInputDto> InputDto);
     }
 }

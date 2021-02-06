@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VictoryLinkTask.Core;
 using VictoryLinkTask.Repository.Interfaces.Common;
@@ -15,24 +16,28 @@ namespace VictoryLinkTask.Service.Implementation
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<GeneralResponseDto> HandleRequest(HandlePromotionInputDto InputDto)
+        public async Task<GeneralResponseDto> HandleRequest(List<HandlePromotionInputDto> InputDto)
         {
             GeneralResponseDto updated = new GeneralResponseDto { status = 2, Message = "fail" };
-            bool exists = await _unitOfWork.Promotion.GetAnyAsync(p => p.MobileNumber != InputDto.MobileNumber);
-            if (exists)
+            foreach (var item in InputDto)
             {
-                Promotion promotion = await _unitOfWork.Promotion.FirstOrDefaultAsync(p => p.MobileNumber == InputDto.MobileNumber);
-                if (promotion != null)
+                bool exists = await _unitOfWork.Promotion.GetAnyAsync(p => p.MobileNumber != item.MobileNumber);
+                if (exists)
                 {
-                    promotion.IsHandled = true;
-                    promotion.HandlingDate = DateTime.Now;
-                    if (await _unitOfWork.Commit() > default(int))
+                    Promotion promotion = await _unitOfWork.Promotion.FirstOrDefaultAsync(p => p.MobileNumber == item.MobileNumber);
+                    if (promotion != null)
                     {
-                        updated.status = 1;
-                        updated.Message = "Success";
+                        promotion.IsHandled = true;
+                        promotion.HandlingDate = DateTime.Now;
                     }
                 }
             }
+            if (await _unitOfWork.Commit() > default(int))
+            {
+                updated.status = 1;
+                updated.Message = "Success";
+            }
+
             return updated;
         }
 
