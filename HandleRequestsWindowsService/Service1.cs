@@ -68,16 +68,16 @@ namespace HandleRequestsWindowsService
             if (!File.Exists(filepath))
             {
                 // Create a file to write to.   
-                using (StreamWriter sw = File.CreateText(filepath))
+                using (StreamWriter streamWriter = File.CreateText(filepath))
                 {
-                    sw.WriteLine(Message);
+                    streamWriter.WriteLine(Message);
                 }
             }
             else
             {
-                using (StreamWriter sw = File.AppendText(filepath))
+                using (StreamWriter streamWriter = File.AppendText(filepath))
                 {
-                    sw.WriteLine(Message);
+                    streamWriter.WriteLine(Message);
                 }
             }
         }
