@@ -28,10 +28,17 @@ namespace HandleRequestsWindowsService
 
         protected override void OnStart(string[] args)
         {
-            WriteToFile("Service is started at " + DateTime.Now);
-            timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
-            timer.Interval = 100000; //number in milisecinds  
-            timer.Enabled = true;
+            try
+            {
+                WriteToFile("Service is started at " + DateTime.Now);
+                timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
+                timer.Interval = 30000; //number in milisecinds  
+                timer.Enabled = true;
+            }catch(Exception ex)
+            {
+                WriteToFile("Exception " + ex);
+            }
+           
         }
         protected override void OnStop()
         {
@@ -46,7 +53,7 @@ namespace HandleRequestsWindowsService
             WriteToFile("Unhandeled Requests count :  " + promotions.Count() + " request.");
 
 
-            //Call API HandleRequest to handle the Requests 
+            //Call API HandleRequest to handle the Requests
             var promotionRequests = promotions.Select(item => new HandlePromotionInputDTO
             {
                 MobileNumber = item.MobileNumber
@@ -113,30 +120,41 @@ namespace HandleRequestsWindowsService
         }
         public async Task<bool> HandledRequests(List<HandlePromotionInputDTO> inputDtos)
         {
-            using (var client = new HttpClient())
+            try
             {
-                client.BaseAddress = new Uri("http://localhost:55587/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                //post Method 
-                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(inputDtos));
-                HttpResponseMessage response = await client.PostAsync("api/HandleRequests", stringContent);
-                if (response.IsSuccessStatusCode)
+                using (var client = new HttpClient())
                 {
-                    var stream = await response.Content.ReadAsStreamAsync();
-                    StreamReader streamReader = new StreamReader(stream);
-                    var content = streamReader.ReadToEnd();
-                    if (!string.IsNullOrWhiteSpace(content))
+                    client.BaseAddress = new Uri("https://localhost:44306/");
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    ////post Method 
+                    var json = JsonConvert.SerializeObject(inputDtos);
+                    var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+                        HttpResponseMessage response = await client.PostAsync("api/HandleRequests", stringContent);
+                    if (response.IsSuccessStatusCode)
                     {
-                        GeneralResponseDto responseDto = JsonConvert.DeserializeObject<GeneralResponseDto>(content);
-                        if (responseDto.status == 1)
-                            return true;
-                        else
-                            return false;
+                        var stream = await response.Content.ReadAsStreamAsync();
+                        StreamReader streamReader = new StreamReader(stream);
+                        var content = streamReader.ReadToEnd();
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            GeneralResponseDto responseDto = JsonConvert.DeserializeObject<GeneralResponseDto>(content);
+                            if (responseDto.status == 1)
+                                return true;
+                            else
+                                return false;
+                        }
                     }
+                    return false;
                 }
-                return false;
             }
+            catch(Exception ex)
+            {
+                WriteToFile(" error : " + ex);
+                return false;
+
+            }
+
         }
     }
 }
