@@ -30,7 +30,7 @@ namespace HandleRequestsWindowsService
         {
             WriteToFile("Service is started at " + DateTime.Now);
             timer.Elapsed += new ElapsedEventHandler(OnElapsedTime);
-            timer.Interval = 10000; //number in milisecinds  
+            timer.Interval = 100000; //number in milisecinds  
             timer.Enabled = true;
         }
         protected override void OnStop()
