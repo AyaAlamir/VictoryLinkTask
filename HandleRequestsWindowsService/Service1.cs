@@ -40,7 +40,7 @@ namespace HandleRequestsWindowsService
         private async void OnElapsedTime(object source, ElapsedEventArgs e)
         {
             WriteToFile("Service is recall at " + DateTime.Now);
-            
+
             //Get the un-handled Request records from Request table
             List<Promotion> promotions = GetUnhandledRequests();
             WriteToFile("Unhandeled Requests count :  " + promotions.Count() + " request.");
@@ -135,7 +135,7 @@ namespace HandleRequestsWindowsService
                             return false;
                     }
                 }
-                    return false;
+                return false;
             }
         }
     }
