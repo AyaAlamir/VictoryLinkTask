@@ -39,7 +39,7 @@ namespace VictoryLinkTask.Presentation.Controllers
         /// <param name="inputDto"></param>
         /// <returns>1 if added successfully , 2 otherwize</returns>
         [HttpPost]
-        [Route("api/HandleRequest")]
+        [Route("api/HandleRequests")]
         public async Task<IHttpActionResult> HandleRequest(List<HandlePromotionInputDto> inputDto)
         {
             GeneralResponseDto result = await _promotionService.HandleRequest(inputDto);

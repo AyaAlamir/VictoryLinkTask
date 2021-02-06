@@ -1,13 +1,15 @@
 ﻿using HandleRequestsWindowsService.DTOs;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,11 +37,25 @@ namespace HandleRequestsWindowsService
         {
             WriteToFile("Service is stopped at " + DateTime.Now);
         }
-        private void OnElapsedTime(object source, ElapsedEventArgs e)
+        private async void OnElapsedTime(object source, ElapsedEventArgs e)
         {
-            List<Promotion> promotions = GetUnhandledRequests();
-            WriteToFile("Unhandeled Requests " + promotions.ToString());
             WriteToFile("Service is recall at " + DateTime.Now);
+            
+            //Get the un-handled Request records from Request table
+            List<Promotion> promotions = GetUnhandledRequests();
+            WriteToFile("Unhandeled Requests count :  " + promotions.Count() + " request.");
+
+
+            //Call API HandleRequest to handle the Requests 
+            var promotionRequests = promotions.Select(item => new HandlePromotionInputDTO
+            {
+                MobileNumber = item.MobileNumber
+            }).ToList();
+            if (await HandledRequests(promotionRequests))
+                WriteToFile("Successfully handled ... ");
+            else
+                WriteToFile("failed to handle ... ");
+
         }
         public void WriteToFile(string Message)
         {
@@ -94,6 +110,33 @@ namespace HandleRequestsWindowsService
                               IsHandled = Convert.ToBoolean(dr["IsHandled"])
                           }).ToList();
             return promotions;
+        }
+        public async Task<bool> HandledRequests(List<HandlePromotionInputDTO> inputDtos)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("http://localhost:55587/");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                //post Method 
+                StringContent stringContent = new StringContent(JsonConvert.SerializeObject(inputDtos));
+                HttpResponseMessage response = await client.PostAsync("api/HandleRequests", stringContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    var stream = await response.Content.ReadAsStreamAsync();
+                    StreamReader streamReader = new StreamReader(stream);
+                    var content = streamReader.ReadToEnd();
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        GeneralResponseDto responseDto = JsonConvert.DeserializeObject<GeneralResponseDto>(content);
+                        if (responseDto.status == 1)
+                            return true;
+                        else
+                            return false;
+                    }
+                }
+                    return false;
+            }
         }
     }
 }
